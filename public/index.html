@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Scores</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 600px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+        }
+        .form-container h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-container label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container input[type="date"],
+        .form-container button {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            transition: border-color 0.3s ease-in-out;
+        }
+        .form-container input[type="text"]:focus,
+        .form-container input[type="number"]:focus,
+        .form-container input[type="date"]:focus,
+        .form-container button:hover {
+            border-color: #4CAF50;
+        }
+        .form-container button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+        .form-container .response {
+            margin-top: 10px;
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .response.success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .response.error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+        .matches-container {
+            margin-top: 30px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .matches-container h2 {
+            text-align: center;
+            color: #333;
+        }
+        .match-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .match-item p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#matchForm').on('submit', function (e) {
+                e.preventDefault();
+        
+                var matchData = {
+                    home_team: $('#home_team').val(),
+                    away_team: $('#away_team').val(),
+                    home_score: $('#home_score').val(),
+                    away_score: $('#away_score').val(),
+                    match_date: $('#match_date').val()
+                };
+        
+                console.log(matchData); // Log les données pour vérification
+        
+                $.ajax({
+                    url: 'submit_match.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(matchData),
+                    success: function (response) {
+                        console.log(response); // Log la réponse pour vérification
+        
+                        if (response.status === 'success') {
+                            $('#response').addClass('success').removeClass('error').text('Match enregistré avec succès!');
+                            $('#matchForm')[0].reset();
+                            loadMatches();
+                        } else {
+                            $('#response').addClass('error').removeClass('success').text('Erreur lors de l\'enregistrement du match: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $('#response').addClass('error').removeClass('success').text('Erreur de communication avec le serveur.');
+                        console.error('Erreur AJAX:', status, error); // Log les erreurs AJAX
+                    }
+                });
+            });
+        
+            function loadMatches() {
+                $.ajax({
+                    url: 'get_matches.php',
+                    type: 'GET',
+                    success: function (response) {
+                        var matchesList = $('#matchesList');
+                        matchesList.empty();
+        
+                        if (response.length > 0) {
+                            $('#noMatchesMessage').hide();
+                            response.forEach(function (match) {
+                                var matchItem = $('<div class="match-item"></div>');
+                                matchItem.append('<p>ID: ' + match.match_id + '</p>');
+                                matchItem.append('<p>' + match.home_team + ' ' + match.home_score + ' - ' + match.away_score + ' ' + match.away_team + '</p>');
+                                matchItem.append('<p>Date: ' + match.match_date + '</p>');
+                                matchesList.append(matchItem);
+                            });
+                        } else {
+                            $('#noMatchesMessage').show();
+                        }
+                    },
+                    error: function () {
+                        console.error('Erreur lors du chargement des matchs.');
+                    }
+                });
+            }
+        
+            loadMatches();
+        });
+        </script>
+        
+    
+</head>
+<body>
+    <div class="form-container">
+        <h1>Enregistrer un Match de Football</h1>
+        <form id="matchForm">
+            <fieldset>
+                <legend>Détails du Match</legend>
+                <label for="home_team">Équipe à domicile :</label>
+                <input type="text" id="home_team" name="home_team" required>
+                
+                <label for="away_team">Équipe à l'extérieur :</label>
+                <input type="text" id="away_team" name="away_team" required>
+                
+                <label for="home_score">Score de l'équipe à domicile :</label>
+                <input type="number" id="home_score" name="home_score" required>
+                
+                <label for="away_score">Score de l'équipe à l'extérieur :</label>
+                <input type="number" id="away_score" name="away_score" required>
+                
+                <label for="match_date">Date du match :</label>
+                <input type="date" id="match_date" name="match_date" required>
+            </fieldset>
+            <button type="submit">Enregistrer</button>
+        </form>
+        <div id="response" class="response"></div>
+    </div>
+
+    <div class="matches-container">
+        <h2>Liste des Matchs Enregistrés</h2>
+        <div id="matchesList">
+            <p id="noMatchesMessage" class="response">Aucun match enregistré pour l'instant.</p>
+        </div>
+    </div>
+</body>
+</html>
